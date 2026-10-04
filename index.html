@@ -1,0 +1,2558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Music</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0b0b0f;
+            color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+            border: 0;
+            border-radius: 10px;
+            padding: 11px 16px;
+            background: #202027;
+            color: white;
+        }
+
+        button:hover {
+            background: #2b2b35;
+        }
+
+        button.primary {
+            background: #fff;
+            color: #111;
+        }
+
+        button.danger {
+            background: #6d2020;
+        }
+
+        button.delete-song {
+            background: #432020;
+        }
+
+        button.delete-song:hover {
+            background: #692727;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .app {
+            width: min(1100px, 100%);
+            margin: auto;
+            padding: 24px;
+            padding-bottom: 190px;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        header h1 {
+            font-size: 28px;
+        }
+
+        .header-actions,
+        .library-actions,
+        .auth-buttons,
+        .song-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .auth {
+            max-width: 430px;
+            margin: 70px auto;
+            padding: 25px;
+            background: #15151b;
+            border-radius: 18px;
+        }
+
+        .auth h2 {
+            margin-bottom: 20px;
+        }
+
+        .auth input {
+            width: 100%;
+            margin-bottom: 12px;
+            padding: 13px;
+            border: 1px solid #303039;
+            border-radius: 10px;
+            background: #0e0e13;
+            color: white;
+            outline: none;
+        }
+
+        .auth-buttons button {
+            flex: 1;
+        }
+
+        .message {
+            margin-top: 15px;
+            color: #aaa;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .library-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 18px;
+        }
+
+        .upload-panel {
+            background: #15151b;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 18px;
+            display: none;
+        }
+
+        .upload-panel.visible {
+            display: block;
+        }
+
+        .upload-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .upload-file {
+            min-width: 0;
+        }
+
+        .upload-file-name {
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .upload-details {
+            color: #888;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 10px;
+            background: #292930;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: #fff;
+            border-radius: 999px;
+            transition: width 0.15s linear;
+        }
+
+        .upload-percent {
+            margin-top: 8px;
+            color: #aaa;
+            font-size: 13px;
+        }
+
+        .song-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .song {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #15151b;
+            border-radius: 12px;
+        }
+
+        .song:hover {
+            background: #1c1c23;
+        }
+
+        .song-info {
+            min-width: 0;
+        }
+
+        .song-title {
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .song-meta {
+            margin-top: 5px;
+            color: #888;
+            font-size: 13px;
+        }
+
+        .empty {
+            padding: 45px 20px;
+            text-align: center;
+            color: #777;
+            background: #15151b;
+            border-radius: 15px;
+        }
+
+        .player {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(17, 17, 22, 0.97);
+            border-top: 1px solid #292930;
+            backdrop-filter: blur(12px);
+            padding: 15px 20px;
+            z-index: 100;
+        }
+
+        .player-inner {
+            width: min(1100px, 100%);
+            margin: auto;
+        }
+
+        .now-playing {
+            margin-bottom: 10px;
+        }
+
+        .now-title {
+            font-weight: 600;
+        }
+
+        .now-artist {
+            color: #888;
+            font-size: 13px;
+            margin-top: 3px;
+        }
+
+        .progress-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #888;
+            font-size: 12px;
+        }
+
+        .player-progress {
+            flex: 1;
+            accent-color: white;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .controls button {
+            min-width: 44px;
+            min-height: 40px;
+        }
+
+        .play-button {
+            background: white;
+            color: black;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            padding: 0;
+        }
+
+        .player-options {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .active {
+            background: #34343d;
+        }
+
+        @media (max-width: 650px) {
+            .app {
+                padding: 15px;
+            }
+
+            header,
+            .library-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .song {
+                grid-template-columns: 1fr;
+            }
+
+            .song-actions {
+                justify-content: flex-start;
+            }
+
+            .library-actions {
+                width: 100%;
+            }
+
+            .library-actions button {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <section id="authScreen" class="auth">
+
+        <h2>Cloud Music</h2>
+
+        <input
+            id="emailInput"
+            type="email"
+            placeholder="Email"
+            autocomplete="email"
+        >
+
+        <input
+            id="passwordInput"
+            type="password"
+            placeholder="Password"
+            autocomplete="current-password"
+        >
+
+        <div class="auth-buttons">
+            <button id="loginButton" class="primary">
+                Log in
+            </button>
+
+            <button id="signupButton">
+                Sign up
+            </button>
+        </div>
+
+        <div id="authMessage" class="message"></div>
+
+    </section>
+
+
+    <main id="appScreen" class="app hidden">
+
+        <header>
+
+            <h1>Cloud Music</h1>
+
+            <div class="header-actions">
+
+                <button id="refreshButton">
+                    Refresh
+                </button>
+
+                <button
+                    id="logoutButton"
+                    class="danger"
+                >
+                    Log out
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <section>
+
+            <div class="library-header">
+
+                <div>
+                    <h2>Your Library</h2>
+                </div>
+
+                <div class="library-actions">
+
+                    <input
+                        id="songUploadInput"
+                        type="file"
+                        accept="audio/*"
+                        multiple
+                        hidden
+                    >
+
+                    <button
+                        id="uploadSongsButton"
+                        class="primary"
+                    >
+                        Upload Songs
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="uploadPanel"
+                class="upload-panel"
+                aria-live="polite"
+            >
+
+                <div class="upload-top">
+
+                    <div class="upload-file">
+
+                        <div
+                            id="uploadFileName"
+                            class="upload-file-name"
+                        >
+                            Preparing upload...
+                        </div>
+
+                        <div
+                            id="uploadDetails"
+                            class="upload-details"
+                        >
+                            0 MB / 0 MB
+                        </div>
+
+                    </div>
+
+                    <strong id="uploadPercent">
+                        0%
+                    </strong>
+
+                </div>
+
+                <div class="progress-track">
+
+                    <div
+                        id="uploadProgressFill"
+                        class="progress-fill"
+                    ></div>
+
+                </div>
+
+                <div
+                    id="uploadStatus"
+                    class="upload-percent"
+                >
+                    Starting upload...
+                </div>
+
+            </div>
+
+
+            <div id="songList" class="song-list">
+
+                <div class="empty">
+                    Loading your library...
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <div class="player">
+
+        <div class="player-inner">
+
+            <div class="now-playing">
+
+                <div
+                    id="nowTitle"
+                    class="now-title"
+                >
+                    Nothing playing
+                </div>
+
+                <div
+                    id="nowArtist"
+                    class="now-artist"
+                >
+                    —
+                </div>
+
+            </div>
+
+
+            <div class="progress-row">
+
+                <span id="currentTime">
+                    0:00
+                </span>
+
+                <input
+                    id="progress"
+                    class="player-progress"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="0"
+                >
+
+                <span id="totalTime">
+                    0:00
+                </span>
+
+            </div>
+
+
+            <div class="controls">
+
+                <button id="previousButton">
+                    ⏮
+                </button>
+
+                <button
+                    id="playButton"
+                    class="play-button"
+                >
+                    ▶
+                </button>
+
+                <button id="nextButton">
+                    ⏭
+                </button>
+
+            </div>
+
+
+            <div class="player-options">
+
+                <button id="shuffleButton">
+                    Shuffle
+                </button>
+
+                <button id="repeatButton">
+                    Repeat
+                </button>
+
+                <button id="muteButton">
+                    Mute
+                </button>
+
+                <input
+                    id="volume"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value="1"
+                >
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        /*
+            SUPABASE
+        */
+
+        const SUPABASE_URL =
+            "https://dotueexiteslwtcbcsgt.supabase.co";
+
+        const SUPABASE_KEY =
+            "sb_publishable_LviXl7EDQww8jtH2HuYhPg_AFILoV48";
+
+        const supabaseClient =
+            supabase.createClient(
+                SUPABASE_URL,
+                SUPABASE_KEY
+            );
+
+        window.supabaseClient =
+            supabaseClient;
+
+
+        /*
+            ELEMENTS
+        */
+
+        const authScreen =
+            document.getElementById("authScreen");
+
+        const appScreen =
+            document.getElementById("appScreen");
+
+        const emailInput =
+            document.getElementById("emailInput");
+
+        const passwordInput =
+            document.getElementById("passwordInput");
+
+        const loginButton =
+            document.getElementById("loginButton");
+
+        const signupButton =
+            document.getElementById("signupButton");
+
+        const logoutButton =
+            document.getElementById("logoutButton");
+
+        const refreshButton =
+            document.getElementById("refreshButton");
+
+        const authMessage =
+            document.getElementById("authMessage");
+
+        const songUploadInput =
+            document.getElementById("songUploadInput");
+
+        const uploadSongsButton =
+            document.getElementById("uploadSongsButton");
+
+        const uploadPanel =
+            document.getElementById("uploadPanel");
+
+        const uploadFileName =
+            document.getElementById("uploadFileName");
+
+        const uploadDetails =
+            document.getElementById("uploadDetails");
+
+        const uploadPercent =
+            document.getElementById("uploadPercent");
+
+        const uploadProgressFill =
+            document.getElementById(
+                "uploadProgressFill"
+            );
+
+        const uploadStatus =
+            document.getElementById(
+                "uploadStatus"
+            );
+
+        const songList =
+            document.getElementById("songList");
+
+        const nowTitle =
+            document.getElementById("nowTitle");
+
+        const nowArtist =
+            document.getElementById("nowArtist");
+
+        const currentTime =
+            document.getElementById("currentTime");
+
+        const totalTime =
+            document.getElementById("totalTime");
+
+        const progress =
+            document.getElementById("progress");
+
+        const playButton =
+            document.getElementById("playButton");
+
+        const previousButton =
+            document.getElementById(
+                "previousButton"
+            );
+
+        const nextButton =
+            document.getElementById(
+                "nextButton"
+            );
+
+        const shuffleButton =
+            document.getElementById(
+                "shuffleButton"
+            );
+
+        const repeatButton =
+            document.getElementById(
+                "repeatButton"
+            );
+
+        const muteButton =
+            document.getElementById(
+                "muteButton"
+            );
+
+        const volume =
+            document.getElementById("volume");
+
+
+        /*
+            STATE
+        */
+
+        let currentUser = null;
+        let songs = [];
+        let queue = [];
+        let currentIndex = -1;
+
+        let shuffleEnabled = false;
+        let repeatEnabled = false;
+
+        const audio = new Audio();
+
+        audio.preload = "metadata";
+
+
+        /*
+            HELPERS
+        */
+
+        function showAuthMessage(message) {
+            authMessage.textContent = message;
+        }
+
+
+        function formatTime(seconds) {
+
+            if (!Number.isFinite(seconds)) {
+                return "0:00";
+            }
+
+            const minutes =
+                Math.floor(seconds / 60);
+
+            const remaining =
+                Math.floor(seconds % 60);
+
+            return `${minutes}:${String(
+                remaining
+            ).padStart(2, "0")}`;
+        }
+
+
+        function formatBytes(bytes) {
+
+            if (
+                !Number.isFinite(bytes) ||
+                bytes <= 0
+            ) {
+                return "0 MB";
+            }
+
+            const mb =
+                bytes / (1024 * 1024);
+
+            if (mb < 1) {
+                return `${Math.round(
+                    bytes / 1024
+                )} KB`;
+            }
+
+            return `${mb.toFixed(2)} MB`;
+        }
+
+
+        function cleanFilename(filename) {
+
+            const extensionIndex =
+                filename.lastIndexOf(".");
+
+            const extension =
+                extensionIndex >= 0
+                    ? filename
+                        .substring(extensionIndex)
+                        .toLowerCase()
+                    : "";
+
+            const name =
+                extensionIndex >= 0
+                    ? filename.substring(
+                        0,
+                        extensionIndex
+                    )
+                    : filename;
+
+            const cleaned =
+                name
+                    .replace(/[^\w\s-]/g, "")
+                    .replace(/\s+/g, "_")
+                    .replace(/_+/g, "_")
+                    .replace(/^_+|_+$/g, "")
+                    .substring(0, 120);
+
+            return `${
+                cleaned || "song"
+            }${extension}`;
+        }
+
+
+        function titleFromFilename(filename) {
+
+            const index =
+                filename.lastIndexOf(".");
+
+            if (index === -1) {
+                return filename;
+            }
+
+            return filename.substring(
+                0,
+                index
+            );
+        }
+
+
+        /*
+            AUTH
+        */
+
+        async function login() {
+
+            const email =
+                emailInput.value.trim();
+
+            const password =
+                passwordInput.value;
+
+            if (!email || !password) {
+
+                showAuthMessage(
+                    "Enter your email and password."
+                );
+
+                return;
+            }
+
+            loginButton.disabled = true;
+
+            showAuthMessage(
+                "Logging in..."
+            );
+
+            const { error } =
+                await supabaseClient.auth
+                    .signInWithPassword({
+                        email,
+                        password
+                    });
+
+            loginButton.disabled = false;
+
+            if (error) {
+
+                showAuthMessage(
+                    error.message
+                );
+
+                return;
+            }
+
+            showAuthMessage("");
+        }
+
+
+        async function signup() {
+
+            const email =
+                emailInput.value.trim();
+
+            const password =
+                passwordInput.value;
+
+            if (!email || !password) {
+
+                showAuthMessage(
+                    "Enter an email and password."
+                );
+
+                return;
+            }
+
+            if (password.length < 6) {
+
+                showAuthMessage(
+                    "Password must be at least 6 characters."
+                );
+
+                return;
+            }
+
+            signupButton.disabled = true;
+
+            showAuthMessage(
+                "Creating account..."
+            );
+
+            const { data, error } =
+                await supabaseClient.auth
+                    .signUp({
+                        email,
+                        password
+                    });
+
+            signupButton.disabled = false;
+
+            if (error) {
+
+                showAuthMessage(
+                    error.message
+                );
+
+                return;
+            }
+
+            if (!data.session) {
+
+                showAuthMessage(
+                    "Account created. Check your email if confirmation is required."
+                );
+
+                return;
+            }
+
+            showAuthMessage("");
+        }
+
+
+        async function logout() {
+            await supabaseClient.auth.signOut();
+        }
+
+
+        /*
+            SESSION
+        */
+
+        function showApp() {
+
+            authScreen.classList.add(
+                "hidden"
+            );
+
+            appScreen.classList.remove(
+                "hidden"
+            );
+        }
+
+
+        function showLogin() {
+
+            appScreen.classList.add(
+                "hidden"
+            );
+
+            authScreen.classList.remove(
+                "hidden"
+            );
+
+            songs = [];
+            queue = [];
+            currentIndex = -1;
+
+            audio.pause();
+            audio.removeAttribute("src");
+            audio.load();
+
+            nowTitle.textContent =
+                "Nothing playing";
+
+            nowArtist.textContent =
+                "—";
+
+            playButton.textContent =
+                "▶";
+
+            songList.innerHTML = `
+                <div class="empty">
+                    Your library is empty.
+                </div>
+            `;
+        }
+
+
+        async function handleSession(session) {
+
+            if (
+                !session ||
+                !session.user
+            ) {
+
+                currentUser = null;
+
+                showLogin();
+
+                return;
+            }
+
+            currentUser =
+                session.user;
+
+            showApp();
+
+            await loadCloudLibrary();
+        }
+
+
+        /*
+            CLOUD LIBRARY
+        */
+
+        async function loadCloudLibrary() {
+
+            songList.innerHTML = `
+                <div class="empty">
+                    Loading your library...
+                </div>
+            `;
+
+            const { data, error } =
+                await supabaseClient
+                    .from("songs")
+                    .select("*")
+                    .eq(
+                        "user_id",
+                        currentUser.id
+                    )
+                    .order(
+                        "created_at",
+                        {
+                            ascending: false
+                        }
+                    );
+
+            if (error) {
+
+                console.error(error);
+
+                songList.innerHTML = `
+                    <div class="empty">
+                        Failed to load your library.
+                        <br><br>
+                        ${error.message}
+                    </div>
+                `;
+
+                return;
+            }
+
+            songs =
+                data || [];
+
+            renderLibrary(songs);
+        }
+
+
+        /*
+            SIGNED AUDIO URL
+        */
+
+        async function getAudioUrl(song) {
+
+            const expectedPrefix =
+                `${currentUser.id}/`;
+
+            if (
+                !song.audio_path ||
+                !song.audio_path.startsWith(
+                    expectedPrefix
+                )
+            ) {
+                throw new Error(
+                    "Invalid song ownership."
+                );
+            }
+
+            const { data, error } =
+                await supabaseClient
+                    .storage
+                    .from("songs")
+                    .createSignedUrl(
+                        song.audio_path,
+                        3600
+                    );
+
+            if (error) {
+                throw error;
+            }
+
+            if (
+                !data ||
+                !data.signedUrl
+            ) {
+                throw new Error(
+                    "Could not create audio URL."
+                );
+            }
+
+            return data.signedUrl;
+        }
+
+
+        /*
+            PLAYER
+        */
+
+        async function playSong(song) {
+
+            try {
+
+                nowTitle.textContent =
+                    song.title ||
+                    "Unknown title";
+
+                nowArtist.textContent =
+                    song.artist ||
+                    "Unknown artist";
+
+                playButton.disabled =
+                    true;
+
+                const url =
+                    await getAudioUrl(song);
+
+                audio.src =
+                    url;
+
+                await audio.play();
+
+                playButton.textContent =
+                    "⏸";
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert(
+                    "Could not play this song:\n\n" +
+                    error.message
+                );
+
+            } finally {
+
+                playButton.disabled =
+                    false;
+            }
+        }
+
+
+        function setQueue(index) {
+
+            queue =
+                [...songs];
+
+            currentIndex =
+                index;
+        }
+
+
+        async function playSongFromLibrary(index) {
+
+            if (
+                index < 0 ||
+                index >= songs.length
+            ) {
+                return;
+            }
+
+            setQueue(index);
+
+            await playSong(
+                queue[currentIndex]
+            );
+        }
+
+
+        async function nextSong() {
+
+            if (queue.length === 0) {
+                return;
+            }
+
+            if (shuffleEnabled) {
+
+                let nextIndex =
+                    Math.floor(
+                        Math.random() *
+                        queue.length
+                    );
+
+                if (
+                    queue.length > 1 &&
+                    nextIndex === currentIndex
+                ) {
+                    nextIndex =
+                        (nextIndex + 1) %
+                        queue.length;
+                }
+
+                currentIndex =
+                    nextIndex;
+
+            } else {
+
+                currentIndex =
+                    (
+                        currentIndex + 1
+                    ) % queue.length;
+            }
+
+            await playSong(
+                queue[currentIndex]
+            );
+        }
+
+
+        async function previousSong() {
+
+            if (queue.length === 0) {
+                return;
+            }
+
+            if (
+                audio.currentTime > 3
+            ) {
+
+                audio.currentTime = 0;
+
+                return;
+            }
+
+            currentIndex =
+                (
+                    currentIndex -
+                    1 +
+                    queue.length
+                ) % queue.length;
+
+            await playSong(
+                queue[currentIndex]
+            );
+        }
+
+
+        /*
+            AUDIO DURATION
+        */
+
+        function getAudioDuration(file) {
+
+            return new Promise(
+                resolve => {
+
+                    const tempAudio =
+                        document.createElement(
+                            "audio"
+                        );
+
+                    const objectUrl =
+                        URL.createObjectURL(
+                            file
+                        );
+
+                    const cleanup = () => {
+
+                        URL.revokeObjectURL(
+                            objectUrl
+                        );
+
+                        tempAudio.removeAttribute(
+                            "src"
+                        );
+
+                        tempAudio.load();
+                    };
+
+                    tempAudio.addEventListener(
+                        "loadedmetadata",
+                        () => {
+
+                            const duration =
+                                Number.isFinite(
+                                    tempAudio.duration
+                                )
+                                    ? Math.round(
+                                        tempAudio.duration
+                                    )
+                                    : null;
+
+                            cleanup();
+
+                            resolve(
+                                duration
+                            );
+
+                        },
+                        {
+                            once: true
+                        }
+                    );
+
+                    tempAudio.addEventListener(
+                        "error",
+                        () => {
+
+                            cleanup();
+
+                            resolve(null);
+
+                        },
+                        {
+                            once: true
+                        }
+                    );
+
+                    tempAudio.src =
+                        objectUrl;
+                }
+            );
+        }
+
+
+        /*
+            UPLOAD WITH REAL PROGRESS
+        */
+
+        function uploadFileWithProgress(
+            file,
+            storagePath,
+            onProgress
+        ) {
+
+            return new Promise(
+                async (
+                    resolve,
+                    reject
+                ) => {
+
+                    try {
+
+                        const {
+                            data,
+                            error
+                        } =
+                            await supabaseClient
+                                .auth
+                                .getSession();
+
+                        if (error) {
+                            reject(error);
+                            return;
+                        }
+
+                        const session =
+                            data.session;
+
+                        if (!session) {
+
+                            reject(
+                                new Error(
+                                    "You are not logged in."
+                                )
+                            );
+
+                            return;
+                        }
+
+                        const url =
+                            `${SUPABASE_URL}/storage/v1/object/songs/${encodeURIComponent(
+                                storagePath
+                            )}`;
+
+                        const xhr =
+                            new XMLHttpRequest();
+
+                        xhr.open(
+                            "POST",
+                            url,
+                            true
+                        );
+
+                        xhr.setRequestHeader(
+                            "Authorization",
+                            `Bearer ${session.access_token}`
+                        );
+
+                        xhr.setRequestHeader(
+                            "apikey",
+                            SUPABASE_KEY
+                        );
+
+                        xhr.setRequestHeader(
+                            "Content-Type",
+                            file.type ||
+                            "audio/mpeg"
+                        );
+
+                        xhr.setRequestHeader(
+                            "x-upsert",
+                            "false"
+                        );
+
+                        xhr.upload.addEventListener(
+                            "progress",
+                            event => {
+
+                                if (
+                                    !event.lengthComputable
+                                ) {
+                                    return;
+                                }
+
+                                const percent =
+                                    Math.round(
+                                        (
+                                            event.loaded /
+                                            event.total
+                                        ) * 100
+                                    );
+
+                                onProgress(
+                                    percent,
+                                    event.loaded,
+                                    event.total
+                                );
+                            }
+                        );
+
+                        xhr.addEventListener(
+                            "load",
+                            () => {
+
+                                if (
+                                    xhr.status >= 200 &&
+                                    xhr.status < 300
+                                ) {
+
+                                    resolve();
+
+                                    return;
+                                }
+
+                                let message =
+                                    "Upload failed.";
+
+                                try {
+
+                                    const response =
+                                        JSON.parse(
+                                            xhr.responseText
+                                        );
+
+                                    if (
+                                        response.message
+                                    ) {
+                                        message =
+                                            response.message;
+                                    }
+
+                                } catch {}
+
+                                reject(
+                                    new Error(
+                                        message
+                                    )
+                                );
+                            }
+                        );
+
+                        xhr.addEventListener(
+                            "error",
+                            () => {
+
+                                reject(
+                                    new Error(
+                                        "Network error during upload."
+                                    )
+                                );
+                            }
+                        );
+
+                        xhr.addEventListener(
+                            "abort",
+                            () => {
+
+                                reject(
+                                    new Error(
+                                        "Upload was cancelled."
+                                    )
+                                );
+                            }
+                        );
+
+                        xhr.send(file);
+
+                    } catch (error) {
+
+                        reject(error);
+                    }
+                }
+            );
+        }
+
+
+        /*
+            UPLOAD ONE SONG
+        */
+
+        async function uploadOneSong(file) {
+
+            if (
+                !file.type.startsWith(
+                    "audio/"
+                )
+            ) {
+                throw new Error(
+                    `${file.name} is not an audio file.`
+                );
+            }
+
+            const safeName =
+                cleanFilename(
+                    file.name
+                );
+
+            const uniqueName =
+                `${Date.now()}_${crypto.randomUUID()}_${safeName}`;
+
+            const storagePath =
+                `${currentUser.id}/${uniqueName}`;
+
+            await uploadFileWithProgress(
+                file,
+                storagePath,
+                (
+                    percent,
+                    loaded,
+                    total
+                ) => {
+
+                    uploadPercent.textContent =
+                        `${percent}%`;
+
+                    uploadProgressFill.style.width =
+                        `${percent}%`;
+
+                    uploadDetails.textContent =
+                        `${formatBytes(
+                            loaded
+                        )} / ${formatBytes(
+                            total
+                        )}`;
+
+                    uploadStatus.textContent =
+                        `Uploading... ${percent}%`;
+                }
+            );
+
+            const duration =
+                await getAudioDuration(
+                    file
+                );
+
+            const {
+                data,
+                error
+            } =
+                await supabaseClient
+                    .from("songs")
+                    .insert({
+                        user_id:
+                            currentUser.id,
+
+                        title:
+                            titleFromFilename(
+                                file.name
+                            ),
+
+                        artist:
+                            null,
+
+                        album:
+                            null,
+
+                        album_art_path:
+                            null,
+
+                        audio_path:
+                            storagePath,
+
+                        duration_seconds:
+                            duration,
+
+                        file_size_bytes:
+                            file.size
+                    })
+                    .select()
+                    .single();
+
+            if (error) {
+
+                await supabaseClient
+                    .storage
+                    .from("songs")
+                    .remove([
+                        storagePath
+                    ]);
+
+                throw error;
+            }
+
+            return data;
+        }
+
+
+        /*
+            UPLOAD MULTIPLE SONGS
+        */
+
+        async function uploadSelectedSongs(files) {
+
+            if (!currentUser) {
+
+                alert(
+                    "You must be logged in."
+                );
+
+                return;
+            }
+
+            const selectedFiles =
+                Array.from(files);
+
+            if (
+                selectedFiles.length === 0
+            ) {
+                return;
+            }
+
+            uploadSongsButton.disabled =
+                true;
+
+            uploadPanel.classList.add(
+                "visible"
+            );
+
+            let successful = 0;
+            let failed = 0;
+
+            for (
+                let i = 0;
+                i < selectedFiles.length;
+                i++
+            ) {
+
+                const file =
+                    selectedFiles[i];
+
+                uploadFileName.textContent =
+                    file.name;
+
+                uploadPercent.textContent =
+                    "0%";
+
+                uploadProgressFill.style.width =
+                    "0%";
+
+                uploadDetails.textContent =
+                    `0 MB / ${formatBytes(
+                        file.size
+                    )}`;
+
+                uploadStatus.textContent =
+                    `Uploading song ${i + 1} of ${
+                        selectedFiles.length
+                    }...`;
+
+                try {
+
+                    await uploadOneSong(
+                        file
+                    );
+
+                    successful++;
+
+                    uploadPercent.textContent =
+                        "100%";
+
+                    uploadProgressFill.style.width =
+                        "100%";
+
+                    uploadDetails.textContent =
+                        `${formatBytes(
+                            file.size
+                        )} / ${formatBytes(
+                            file.size
+                        )}`;
+
+                    uploadStatus.textContent =
+                        `Uploaded successfully — ${i + 1} of ${
+                            selectedFiles.length
+                        }`;
+
+                } catch (error) {
+
+                    failed++;
+
+                    console.error(
+                        "Upload failed:",
+                        error
+                    );
+
+                    uploadStatus.textContent =
+                        `Failed: ${error.message}`;
+
+                    await new Promise(
+                        resolve =>
+                            setTimeout(
+                                resolve,
+                                800
+                            )
+                    );
+                }
+            }
+
+            uploadFileName.textContent =
+                "Upload complete";
+
+            uploadPercent.textContent =
+                "100%";
+
+            uploadDetails.textContent =
+                `${successful} uploaded, ${failed} failed`;
+
+            uploadStatus.textContent =
+                "Refreshing your library...";
+
+            songUploadInput.value =
+                "";
+
+            uploadSongsButton.disabled =
+                false;
+
+            await loadCloudLibrary();
+
+            uploadStatus.textContent =
+                `Done — ${successful} uploaded${
+                    failed
+                        ? `, ${failed} failed`
+                        : ""
+                }.`;
+        }
+
+
+        /*
+            DOWNLOAD
+        */
+
+        async function downloadSong(song) {
+
+            try {
+
+                const expectedPrefix =
+                    `${currentUser.id}/`;
+
+                if (
+                    !song.audio_path ||
+                    !song.audio_path.startsWith(
+                        expectedPrefix
+                    )
+                ) {
+                    throw new Error(
+                        "You cannot download this song."
+                    );
+                }
+
+                const {
+                    data,
+                    error
+                } =
+                    await supabaseClient
+                        .storage
+                        .from("songs")
+                        .createSignedUrl(
+                            song.audio_path,
+                            300
+                        );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (
+                    !data ||
+                    !data.signedUrl
+                ) {
+                    throw new Error(
+                        "Could not create download URL."
+                    );
+                }
+
+                const link =
+                    document.createElement(
+                        "a"
+                    );
+
+                link.href =
+                    data.signedUrl;
+
+                link.download =
+                    `${song.title || "song"}.mp3`;
+
+                link.target =
+                    "_blank";
+
+                link.rel =
+                    "noopener";
+
+                document.body.appendChild(
+                    link
+                );
+
+                link.click();
+
+                link.remove();
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert(
+                    "Download failed:\n\n" +
+                    error.message
+                );
+            }
+        }
+
+
+        /*
+            DELETE SONG
+        */
+
+        async function deleteSong(song) {
+
+            if (!currentUser) {
+                return;
+            }
+
+            if (!song || !song.id) {
+                return;
+            }
+
+            /*
+                Make sure the database record belongs
+                to the logged-in user.
+            */
+
+            if (
+                song.user_id !==
+                currentUser.id
+            ) {
+                alert(
+                    "You cannot delete this song."
+                );
+
+                return;
+            }
+
+            const confirmed =
+                confirm(
+                    `Delete "${song.title}" from your library?\n\nThis will permanently remove the cloud file too.`
+                );
+
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+
+                /*
+                    Stop the song if it is currently
+                    playing.
+                */
+
+                const playingSong =
+                    queue[currentIndex];
+
+                if (
+                    playingSong &&
+                    playingSong.id === song.id
+                ) {
+
+                    audio.pause();
+
+                    audio.removeAttribute(
+                        "src"
+                    );
+
+                    audio.load();
+
+                    nowTitle.textContent =
+                        "Nothing playing";
+
+                    nowArtist.textContent =
+                        "—";
+
+                    playButton.textContent =
+                        "▶";
+
+                    queue = [];
+                    currentIndex = -1;
+                }
+
+
+                /*
+                    Delete the actual audio file
+                    from private Supabase Storage.
+                */
+
+                if (song.audio_path) {
+
+                    const expectedPrefix =
+                        `${currentUser.id}/`;
+
+                    if (
+                        !song.audio_path.startsWith(
+                            expectedPrefix
+                        )
+                    ) {
+                        throw new Error(
+                            "Invalid storage path."
+                        );
+                    }
+
+                    const {
+                        error:
+                            storageError
+                    } =
+                        await supabaseClient
+                            .storage
+                            .from("songs")
+                            .remove([
+                                song.audio_path
+                            ]);
+
+                    if (storageError) {
+                        throw storageError;
+                    }
+                }
+
+
+                /*
+                    Delete the database record.
+                */
+
+                const {
+                    error:
+                        databaseError
+                } =
+                    await supabaseClient
+                        .from("songs")
+                        .delete()
+                        .eq(
+                            "id",
+                            song.id
+                        )
+                        .eq(
+                            "user_id",
+                            currentUser.id
+                        );
+
+
+                if (databaseError) {
+                    throw databaseError;
+                }
+
+
+                /*
+                    Remove it immediately from the
+                    local library without waiting
+                    for a page refresh.
+                */
+
+                songs =
+                    songs.filter(
+                        item =>
+                            item.id !== song.id
+                    );
+
+                queue =
+                    queue.filter(
+                        item =>
+                            item.id !== song.id
+                    );
+
+                renderLibrary(
+                    songs
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Delete failed:",
+                    error
+                );
+
+                alert(
+                    "Could not delete the song:\n\n" +
+                    error.message
+                );
+            }
+        }
+
+
+        /*
+            LIBRARY UI
+        */
+
+        function renderLibrary(list) {
+
+            if (
+                !list ||
+                list.length === 0
+            ) {
+
+                songList.innerHTML = `
+                    <div class="empty">
+                        Your library is empty.<br><br>
+                        Upload your first song.
+                    </div>
+                `;
+
+                return;
+            }
+
+            songList.innerHTML =
+                "";
+
+            list.forEach(
+                (
+                    song,
+                    index
+                ) => {
+
+                    const row =
+                        document.createElement(
+                            "div"
+                        );
+
+                    row.className =
+                        "song";
+
+
+                    const info =
+                        document.createElement(
+                            "div"
+                        );
+
+                    info.className =
+                        "song-info";
+
+
+                    const title =
+                        document.createElement(
+                            "div"
+                        );
+
+                    title.className =
+                        "song-title";
+
+                    title.textContent =
+                        song.title ||
+                        "Unknown title";
+
+
+                    const meta =
+                        document.createElement(
+                            "div"
+                        );
+
+                    meta.className =
+                        "song-meta";
+
+                    meta.textContent =
+                        `${
+                            song.artist ||
+                            "Unknown artist"
+                        } • ${
+                            formatTime(
+                                song.duration_seconds
+                            )
+                        }`;
+
+
+                    info.appendChild(
+                        title
+                    );
+
+                    info.appendChild(
+                        meta
+                    );
+
+
+                    const actions =
+                        document.createElement(
+                            "div"
+                        );
+
+                    actions.className =
+                        "song-actions";
+
+
+                    const play =
+                        document.createElement(
+                            "button"
+                        );
+
+                    play.textContent =
+                        "Play";
+
+                    play.addEventListener(
+                        "click",
+                        () => {
+
+                            playSongFromLibrary(
+                                index
+                            );
+                        }
+                    );
+
+
+                    const download =
+                        document.createElement(
+                            "button"
+                        );
+
+                    download.textContent =
+                        "Download";
+
+                    download.addEventListener(
+                        "click",
+                        () => {
+
+                            downloadSong(
+                                song
+                            );
+                        }
+                    );
+
+
+                    const deleteButton =
+                        document.createElement(
+                            "button"
+                        );
+
+                    deleteButton.textContent =
+                        "Delete";
+
+                    deleteButton.className =
+                        "delete-song";
+
+                    deleteButton.addEventListener(
+                        "click",
+                        () => {
+
+                            deleteSong(
+                                song
+                            );
+                        }
+                    );
+
+
+                    actions.appendChild(
+                        play
+                    );
+
+                    actions.appendChild(
+                        download
+                    );
+
+                    actions.appendChild(
+                        deleteButton
+                    );
+
+
+                    row.appendChild(
+                        info
+                    );
+
+                    row.appendChild(
+                        actions
+                    );
+
+
+                    songList.appendChild(
+                        row
+                    );
+                }
+            );
+        }
+
+
+        /*
+            PLAYER EVENTS
+        */
+
+        playButton.addEventListener(
+            "click",
+            async () => {
+
+                if (!audio.src) {
+
+                    if (songs.length) {
+                        await playSongFromLibrary(
+                            0
+                        );
+                    }
+
+                    return;
+                }
+
+                if (audio.paused) {
+
+                    await audio.play();
+
+                    playButton.textContent =
+                        "⏸";
+
+                } else {
+
+                    audio.pause();
+
+                    playButton.textContent =
+                        "▶";
+                }
+            }
+        );
+
+
+        previousButton.addEventListener(
+            "click",
+            previousSong
+        );
+
+
+        nextButton.addEventListener(
+            "click",
+            nextSong
+        );
+
+
+        progress.addEventListener(
+            "input",
+            () => {
+
+                if (
+                    !Number.isFinite(
+                        audio.duration
+                    )
+                ) {
+                    return;
+                }
+
+                audio.currentTime =
+                    (
+                        Number(
+                            progress.value
+                        ) / 100
+                    ) *
+                    audio.duration;
+            }
+        );
+
+
+        volume.addEventListener(
+            "input",
+            () => {
+
+                audio.volume =
+                    Number(
+                        volume.value
+                    );
+
+                audio.muted =
+                    audio.volume === 0;
+
+                muteButton.textContent =
+                    audio.muted
+                        ? "Unmute"
+                        : "Mute";
+            }
+        );
+
+
+        muteButton.addEventListener(
+            "click",
+            () => {
+
+                audio.muted =
+                    !audio.muted;
+
+                muteButton.textContent =
+                    audio.muted
+                        ? "Unmute"
+                        : "Mute";
+            }
+        );
+
+
+        shuffleButton.addEventListener(
+            "click",
+            () => {
+
+                shuffleEnabled =
+                    !shuffleEnabled;
+
+                shuffleButton.classList.toggle(
+                    "active",
+                    shuffleEnabled
+                );
+            }
+        );
+
+
+        repeatButton.addEventListener(
+            "click",
+            () => {
+
+                repeatEnabled =
+                    !repeatEnabled;
+
+                repeatButton.classList.toggle(
+                    "active",
+                    repeatEnabled
+                );
+            }
+        );
+
+
+        audio.addEventListener(
+            "timeupdate",
+            () => {
+
+                currentTime.textContent =
+                    formatTime(
+                        audio.currentTime
+                    );
+
+                totalTime.textContent =
+                    formatTime(
+                        audio.duration
+                    );
+
+                if (
+                    Number.isFinite(
+                        audio.duration
+                    ) &&
+                    audio.duration > 0
+                ) {
+
+                    progress.value =
+                        (
+                            audio.currentTime /
+                            audio.duration
+                        ) * 100;
+                }
+            }
+        );
+
+
+        audio.addEventListener(
+            "play",
+            () => {
+
+                playButton.textContent =
+                    "⏸";
+            }
+        );
+
+
+        audio.addEventListener(
+            "pause",
+            () => {
+
+                playButton.textContent =
+                    "▶";
+            }
+        );
+
+
+        audio.addEventListener(
+            "ended",
+            async () => {
+
+                if (repeatEnabled) {
+
+                    audio.currentTime =
+                        0;
+
+                    await audio.play();
+
+                    return;
+                }
+
+                await nextSong();
+            }
+        );
+
+
+        /*
+            UPLOAD BUTTON
+        */
+
+        uploadSongsButton.addEventListener(
+            "click",
+            () => {
+
+                songUploadInput.click();
+            }
+        );
+
+
+        songUploadInput.addEventListener(
+            "change",
+            async () => {
+
+                await uploadSelectedSongs(
+                    songUploadInput.files
+                );
+            }
+        );
+
+
+        /*
+            OTHER BUTTONS
+        */
+
+        refreshButton.addEventListener(
+            "click",
+            loadCloudLibrary
+        );
+
+
+        logoutButton.addEventListener(
+            "click",
+            logout
+        );
+
+
+        loginButton.addEventListener(
+            "click",
+            login
+        );
+
+
+        signupButton.addEventListener(
+            "click",
+            signup
+        );
+
+
+        passwordInput.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.key === "Enter"
+                ) {
+                    login();
+                }
+            }
+        );
+
+
+        /*
+            AUTH STATE
+        */
+
+        supabaseClient.auth
+            .onAuthStateChange(
+                async (
+                    _event,
+                    session
+                ) => {
+
+                    await handleSession(
+                        session
+                    );
+                }
+            );
+
+
+        /*
+            INITIALIZE
+        */
+
+        async function initialize() {
+
+            const {
+                data,
+                error
+            } =
+                await supabaseClient
+                    .auth
+                    .getSession();
+
+            if (error) {
+
+                console.error(
+                    error
+                );
+
+                showAuthMessage(
+                    error.message
+                );
+
+                return;
+            }
+
+            await handleSession(
+                data.session
+            );
+        }
+
+
+        initialize();
+
+    </script>
+
+</body>
+</html>
