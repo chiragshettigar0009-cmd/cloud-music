@@ -525,7 +525,7 @@ button:disabled {
 
 .song-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr 42px;
+    grid-template-columns: 1fr 1fr 1fr 42px;
     gap: 6px;
     margin-top: 13px;
 }
@@ -553,6 +553,15 @@ button:disabled {
 
 .song-action.playlist {
     color: #ddd;
+}
+
+.song-action.public {
+    color: #aaa;
+}
+
+.song-action.public.active {
+    background: white;
+    color: black;
 }
 
 /* PLAYLISTS */
@@ -1387,6 +1396,13 @@ button:disabled {
         </button>
 
         <button
+            id="discoverTab"
+            class="content-tab"
+        >
+            Discover
+        </button>
+
+        <button
             id="playlistsTab"
             class="content-tab"
         >
@@ -1465,6 +1481,27 @@ button:disabled {
             </div>
 
         </div>
+
+    </section>
+
+
+    <!-- DISCOVER VIEW -->
+
+    <section id="discoverView" class="hidden">
+
+        <div class="section-header">
+
+            <h2 class="section-title">
+                Discover
+            </h2>
+
+            <span id="discoverCount" class="section-count">
+                0 songs
+            </span>
+
+        </div>
+
+        <div id="discoverList" class="song-list"></div>
 
     </section>
 
@@ -1794,11 +1831,23 @@ const searchInput =
 const libraryTab =
     document.getElementById("libraryTab");
 
+const discoverTab =
+    document.getElementById("discoverTab");
+
 const playlistsTab =
     document.getElementById("playlistsTab");
 
 const libraryView =
     document.getElementById("libraryView");
+
+const discoverView =
+    document.getElementById("discoverView");
+
+const discoverList =
+    document.getElementById("discoverList");
+
+const discoverCount =
+    document.getElementById("discoverCount");
 
 const playlistView =
     document.getElementById("playlistView");
@@ -1883,6 +1932,8 @@ const volume =
 let currentUser = null;
 
 let songs = [];
+
+let discoverSongs = [];
 
 let playlists = [];
 
@@ -2124,6 +2175,7 @@ function showLogin() {
     authScreen.classList.remove("hidden");
 
     songs = [];
+    discoverSongs = [];
     playlists = [];
     queue = [];
     currentIndex = -1;
@@ -2145,6 +2197,9 @@ function showLogin() {
     libraryCount.textContent =
         "0 songs";
 
+    discoverCount.textContent =
+        "0 songs";
+
     playlistCount.textContent =
         "0 playlists";
 
@@ -2156,6 +2211,8 @@ function showLogin() {
             </div>
         </div>
     `;
+
+    discoverList.innerHTML = "";
 
     playlistList.innerHTML = "";
     playlistDetail.innerHTML = "";
@@ -2179,6 +2236,7 @@ async function handleSession(session) {
     showApp();
 
     await loadCloudLibrary();
+    await loadDiscoverSongs();
     await loadPlaylists();
 }
 
@@ -2233,6 +2291,217 @@ async function loadCloudLibrary() {
 }
 
 
+/* =========================
+   DISCOVERY
+========================= */
+
+async function loadDiscoverSongs() {
+
+    discoverList.innerHTML = `
+        <div class="empty">
+            <div class="empty-icon">♫</div>
+            <div class="empty-title">
+                Loading public songs...
+            </div>
+        </div>
+    `;
+
+    const { data,error } =
+        await supabaseClient
+            .from("songs")
+            .select("*")
+            .eq("is_public",true)
+            .order(
+                "created_at",
+                { ascending:false }
+            );
+
+    if (error) {
+
+        console.error(
+            "Discovery loading failed:",
+            error
+        );
+
+        discoverList.innerHTML = `
+            <div class="empty">
+                <div class="empty-icon">!</div>
+                <div class="empty-title">
+                    Failed to load public songs.
+                </div>
+                <div class="empty-text">
+                    ${error.message}
+                </div>
+            </div>
+        `;
+
+        return;
+    }
+
+    discoverSongs =
+        data || [];
+
+    renderDiscover();
+}
+
+
+function getFilteredDiscoverSongs() {
+
+    const query =
+        searchQuery
+            .trim()
+            .toLowerCase();
+
+    if (!query) {
+        return discoverSongs;
+    }
+
+    return discoverSongs.filter(song => {
+
+        const title =
+            (song.title || "")
+                .toLowerCase();
+
+        const artist =
+            (song.artist || "")
+                .toLowerCase();
+
+        const album =
+            (song.album || "")
+                .toLowerCase();
+
+        return (
+            title.includes(query) ||
+            artist.includes(query) ||
+            album.includes(query)
+        );
+    });
+}
+
+
+function renderDiscover() {
+
+    const filtered =
+        getFilteredDiscoverSongs();
+
+    discoverCount.textContent =
+        `${filtered.length} ${
+            filtered.length === 1
+                ? "song"
+                : "songs"
+        }`;
+
+    if (!filtered.length) {
+
+        discoverList.innerHTML = `
+            <div class="empty">
+
+                <div class="empty-icon">
+                    ${searchQuery ? "⌕" : "♫"}
+                </div>
+
+                <div class="empty-title">
+                    ${
+                        searchQuery
+                            ? "No public songs found."
+                            : "No public songs yet."
+                    }
+                </div>
+
+                <div class="empty-text">
+                    ${
+                        searchQuery
+                            ? "Try a different search."
+                            : "Public songs from Cloud Music users will appear here."
+                    }
+                </div>
+
+            </div>
+        `;
+
+        return;
+    }
+
+    discoverList.innerHTML = "";
+
+    filtered.forEach(song => {
+
+        const row =
+            document.createElement("article");
+
+        row.className = "song";
+
+        const art =
+            document.createElement("div");
+
+        art.className = "song-art";
+
+        art.innerHTML =
+            `<div class="song-art-symbol">♫</div>`;
+
+        const info =
+            document.createElement("div");
+
+        info.className = "song-info";
+
+        const title =
+            document.createElement("div");
+
+        title.className = "song-title";
+
+        title.textContent =
+            song.title ||
+            "Unknown title";
+
+        const meta =
+            document.createElement("div");
+
+        meta.className = "song-meta";
+
+        meta.textContent =
+            `${song.artist || "Unknown artist"} • ${
+                formatTime(song.duration_seconds)
+            }`;
+
+        info.appendChild(title);
+        info.appendChild(meta);
+
+        const actions =
+            document.createElement("div");
+
+        actions.className =
+            "song-actions";
+
+        const play =
+            document.createElement("button");
+
+        play.className =
+            "song-action play";
+
+        play.textContent =
+            "Play";
+
+        play.addEventListener(
+            "click",
+            () =>
+                playDiscoverSong(song)
+        );
+
+        actions.appendChild(play);
+
+        row.appendChild(art);
+        row.appendChild(info);
+        row.appendChild(actions);
+
+        discoverList.appendChild(row);
+    });
+}
+
+
+/* =========================
+   LIBRARY SEARCH
+========================= */
+
 function getFilteredSongs() {
 
     const query =
@@ -2273,13 +2542,28 @@ function getFilteredSongs() {
 
 async function getAudioUrl(song) {
 
-    const expectedPrefix =
-        `${currentUser.id}/`;
+    const isOwner =
+        song.user_id === currentUser.id;
+
+    const isPublic =
+        song.is_public === true;
+
+    if (!isOwner && !isPublic) {
+        throw new Error(
+            "This song is private."
+        );
+    }
+
+    if (!song.audio_path) {
+        throw new Error(
+            "This song has no audio file."
+        );
+    }
 
     if (
-        !song.audio_path ||
+        isOwner &&
         !song.audio_path.startsWith(
-            expectedPrefix
+            `${currentUser.id}/`
         )
     ) {
         throw new Error(
@@ -2381,6 +2665,26 @@ async function playSongFromLibrary(index) {
 }
 
 
+async function playDiscoverSong(song) {
+
+    queue = [...discoverSongs];
+
+    currentIndex =
+        queue.findIndex(
+            item =>
+                item.id === song.id
+        );
+
+    if (currentIndex < 0) {
+        return;
+    }
+
+    await playSong(
+        queue[currentIndex]
+    );
+}
+
+
 async function playSongFromPlaylist(index) {
 
     if (
@@ -2465,6 +2769,74 @@ async function previousSong() {
     await playSong(
         queue[currentIndex]
     );
+}
+
+
+/* =========================
+   PUBLIC / PRIVATE
+========================= */
+
+async function toggleSongVisibility(song) {
+
+    if (
+        !currentUser ||
+        !song ||
+        song.user_id !== currentUser.id
+    ) {
+        alert(
+            "You can only change visibility for your own songs."
+        );
+        return;
+    }
+
+    const newVisibility =
+        !Boolean(song.is_public);
+
+    const { data,error } =
+        await supabaseClient
+            .from("songs")
+            .update({
+                is_public: newVisibility
+            })
+            .eq(
+                "id",
+                song.id
+            )
+            .eq(
+                "user_id",
+                currentUser.id
+            )
+            .select()
+            .single();
+
+    if (error) {
+
+        console.error(
+            "Visibility update failed:",
+            error
+        );
+
+        alert(
+            "Could not change song visibility:\n\n" +
+            error.message
+        );
+
+        return;
+    }
+
+    const index =
+        songs.findIndex(
+            item =>
+                item.id === song.id
+        );
+
+    if (index !== -1) {
+        songs[index] = data;
+    }
+
+    renderLibrary();
+
+    await loadDiscoverSongs();
 }
 
 
@@ -2756,7 +3128,8 @@ async function uploadOneSong(file) {
                 album_art_path: null,
                 audio_path: storagePath,
                 duration_seconds: duration,
-                file_size_bytes: file.size
+                file_size_bytes: file.size,
+                is_public: false
             })
             .select()
             .single();
@@ -2877,6 +3250,7 @@ async function uploadSelectedSongs(files) {
     uploadSongsButton.disabled = false;
 
     await loadCloudLibrary();
+    await loadDiscoverSongs();
 
     uploadStatus.textContent =
         `Done — ${successful} uploaded${
@@ -3060,6 +3434,12 @@ async function deleteSong(song) {
                     item.id !== song.id
             );
 
+        discoverSongs =
+            discoverSongs.filter(
+                item =>
+                    item.id !== song.id
+            );
+
         queue =
             queue.filter(
                 item =>
@@ -3068,7 +3448,8 @@ async function deleteSong(song) {
 
         await loadPlaylists();
 
-        renderLibrary(songs);
+        renderLibrary();
+        renderDiscover();
 
     } catch (error) {
 
@@ -3220,6 +3601,32 @@ function renderLibrary() {
                 downloadSong(song)
         );
 
+        const visibility =
+            document.createElement("button");
+
+        visibility.className =
+            "song-action public";
+
+        visibility.textContent =
+            song.is_public
+                ? "Public"
+                : "Private";
+
+        visibility.title =
+            song.is_public
+                ? "Make song private"
+                : "Make song public";
+
+        if (song.is_public) {
+            visibility.classList.add("active");
+        }
+
+        visibility.addEventListener(
+            "click",
+            () =>
+                toggleSongVisibility(song)
+        );
+
         const playlist =
             document.createElement("button");
 
@@ -3240,6 +3647,7 @@ function renderLibrary() {
 
         actions.appendChild(play);
         actions.appendChild(download);
+        actions.appendChild(visibility);
         actions.appendChild(playlist);
 
         row.appendChild(art);
@@ -3747,14 +4155,6 @@ function renderPlaylistDetail() {
         "click",
         () => {
 
-            if (!playlistSongs.length) {
-                openAddPlaylistModal(
-                    null,
-                    activePlaylist
-                );
-                return;
-            }
-
             openAddPlaylistModal(
                 null,
                 activePlaylist
@@ -4237,7 +4637,7 @@ async function removeSongFromPlaylist(
         console.error(error);
 
         alert(
-            "Could not remove song:\n\n" +
+            "Could not remove song from playlist:\n\n" +
             error.message
         );
     }
@@ -4256,11 +4656,19 @@ function showLibraryView() {
         "hidden"
     );
 
+    discoverView.classList.add(
+        "hidden"
+    );
+
     playlistView.classList.add(
         "hidden"
     );
 
     libraryTab.classList.add(
+        "active"
+    );
+
+    discoverTab.classList.remove(
         "active"
     );
 
@@ -4270,6 +4678,44 @@ function showLibraryView() {
 
     searchInput.placeholder =
         "Search your library...";
+
+    renderLibrary();
+}
+
+
+async function showDiscoverView() {
+
+    activeView = "discover";
+
+    libraryView.classList.add(
+        "hidden"
+    );
+
+    discoverView.classList.remove(
+        "hidden"
+    );
+
+    playlistView.classList.add(
+        "hidden"
+    );
+
+    libraryTab.classList.remove(
+        "active"
+    );
+
+    discoverTab.classList.add(
+        "active"
+    );
+
+    playlistsTab.classList.remove(
+        "active"
+    );
+
+    searchInput.placeholder =
+        "Search public songs...";
+
+    await loadDiscoverSongs();
+    renderDiscover();
 }
 
 
@@ -4281,11 +4727,19 @@ async function showPlaylistView() {
         "hidden"
     );
 
+    discoverView.classList.add(
+        "hidden"
+    );
+
     playlistView.classList.remove(
         "hidden"
     );
 
     libraryTab.classList.remove(
+        "active"
+    );
+
+    discoverTab.classList.remove(
         "active"
     );
 
@@ -4330,6 +4784,13 @@ searchInput.addEventListener(
         ) {
             renderLibrary();
         }
+
+        if (
+            activeView ===
+            "discover"
+        ) {
+            renderDiscover();
+        }
     }
 );
 
@@ -4337,6 +4798,12 @@ searchInput.addEventListener(
 libraryTab.addEventListener(
     "click",
     showLibraryView
+);
+
+
+discoverTab.addEventListener(
+    "click",
+    showDiscoverView
 );
 
 
@@ -4663,6 +5130,7 @@ refreshButton.addEventListener(
     async () => {
 
         await loadCloudLibrary();
+        await loadDiscoverSongs();
         await loadPlaylists();
     }
 );
