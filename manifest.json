@@ -1,0 +1,8 @@
+{
+  "name": "Cloud Music",
+  "short_name": "Cloud Music",
+  "start_url": "/cloud-music/",
+  "display": "standalone",
+  "background_color": "@0f0f0f",
+  "theme_color": "#0f0f0f",
+  "description": "A simple cloud music player and library."
