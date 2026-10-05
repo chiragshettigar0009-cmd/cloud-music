@@ -460,6 +460,123 @@ function getDownloadFilename(
 
 
 /* =========================================================
+   APK / WEBVIEW DOWNLOAD HELPER
+   ========================================================= */
+
+/*
+    IMPORTANT:
+
+    Do NOT use:
+
+        fetch()
+        -> blob()
+        -> URL.createObjectURL()
+        -> <a download>
+
+    for downloads.
+
+    Android WebViews frequently handle that badly.
+
+    Instead we give the WebView a real HTTPS URL.
+    Supabase's signed URL can explicitly request
+    download behavior.
+*/
+
+function openDownloadUrl(
+    url,
+    filename
+) {
+
+    if (!url) {
+        throw new Error(
+            "No download URL was created."
+        );
+    }
+
+
+    /*
+        First try a normal anchor using the real
+        HTTPS URL.
+
+        The server-side download response from
+        Supabase is what tells the WebView that
+        this is a downloadable file.
+    */
+
+    const link =
+        document.createElement(
+            "a"
+        );
+
+    link.href =
+        url;
+
+    link.download =
+        filename || "";
+
+    link.target =
+        "_blank";
+
+    link.rel =
+        "noopener";
+
+    document.body.appendChild(
+        link
+    );
+
+    link.click();
+
+    link.remove();
+}
+
+
+/*
+    Creates a signed Supabase URL configured
+    to trigger a download.
+
+    The bucket stays PRIVATE.
+*/
+
+async function createDownloadUrl(
+    storagePath,
+    filename
+) {
+
+    const {
+        data,
+        error
+    } =
+        await supabaseClient.storage
+            .from("songs")
+            .createSignedUrl(
+                storagePath,
+                3600,
+                {
+                    download:
+                        filename
+                }
+            );
+
+
+    if (error) {
+        throw error;
+    }
+
+
+    if (!data?.signedUrl) {
+
+        throw new Error(
+            "Could not create download URL."
+        );
+
+    }
+
+
+    return data.signedUrl;
+}
+
+
+/* =========================================================
    AUTH
    ========================================================= */
 
@@ -645,12 +762,6 @@ supabaseClient.auth.onAuthStateChange(
     ) => {
 
         if (session) {
-
-            /*
-                Don't force a second full reload
-                when the session changes during
-                normal app usage.
-            */
 
             if (
                 !currentUser ||
@@ -866,10 +977,6 @@ async function uploadSong(file) {
     let duration = null;
 
 
-    /*
-        Try to determine duration before upload.
-    */
-
     try {
 
         duration =
@@ -920,11 +1027,6 @@ async function uploadSong(file) {
         );
 
 
-        /*
-            Storage upload succeeded.
-            Now create the database record.
-        */
-
         const {
             data,
             error
@@ -954,12 +1056,6 @@ async function uploadSong(file) {
 
 
         if (error) {
-
-            /*
-                If DB insertion fails after
-                storage upload, clean up the
-                uploaded file.
-            */
 
             await supabaseClient.storage
                 .from("songs")
@@ -1994,47 +2090,32 @@ async function downloadSong(song) {
         );
 
 
-        const {
-            data,
-            error
-        } =
-            await supabaseClient.storage
-                .from("songs")
-                .createSignedUrl(
-                    song.audio_path,
-                    3600
-                );
+        /*
+            IMPORTANT:
 
+            We no longer fetch the file into a
+            browser Blob.
 
-        if (error) {
-            throw error;
-        }
+            Supabase creates a real HTTPS signed
+            URL with download behavior enabled.
+        */
 
-
-        const response =
-            await fetch(
-                data.signedUrl
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "Could not download the file."
-            );
-
-        }
-
-
-        const blob =
-            await response.blob();
-
-
-        triggerBrowserDownload(
-            blob,
+        const filename =
             getDownloadFilename(
                 song
-            )
+            );
+
+
+        const signedUrl =
+            await createDownloadUrl(
+                song.audio_path,
+                filename
+            );
+
+
+        openDownloadUrl(
+            signedUrl,
+            filename
         );
 
 
@@ -2051,54 +2132,11 @@ async function downloadSong(song) {
         );
 
         showToast(
+            error.message ||
             "Could not download this song."
         );
 
     }
-}
-
-
-function triggerBrowserDownload(
-    blob,
-    filename
-) {
-
-    const url =
-        URL.createObjectURL(
-            blob
-        );
-
-
-    const link =
-        document.createElement(
-            "a"
-        );
-
-    link.href =
-        url;
-
-    link.download =
-        filename;
-
-    document.body.appendChild(
-        link
-    );
-
-    link.click();
-
-    link.remove();
-
-
-    setTimeout(
-        () => {
-
-            URL.revokeObjectURL(
-                url
-            );
-
-        },
-        1000
-    );
 }
 
 
@@ -2195,12 +2233,6 @@ async function deleteSong(song) {
         );
 
 
-        /*
-            playlist_songs has ON DELETE CASCADE,
-            so this song automatically disappears
-            from playlists too.
-        */
-
         if (currentPlaylist) {
 
             await loadPlaylistSongs(
@@ -2229,10 +2261,6 @@ async function deleteSong(song) {
    PLAYLISTS
    ========================================================= */
 
-/*
-    Open create panel.
-*/
-
 createPlaylistButton.addEventListener(
     "click",
     () => {
@@ -2246,10 +2274,6 @@ createPlaylistButton.addEventListener(
     }
 );
 
-
-/*
-    Cancel create.
-*/
 
 cancelPlaylistButton.addEventListener(
     "click",
@@ -2272,10 +2296,6 @@ function closePlaylistCreatePanel() {
 
 }
 
-
-/*
-    Create playlist.
-*/
 
 savePlaylistButton.addEventListener(
     "click",
@@ -2406,10 +2426,6 @@ async function createPlaylist() {
 }
 
 
-/*
-    Load playlists.
-*/
-
 async function loadPlaylists() {
 
     if (!currentUser) {
@@ -2463,10 +2479,6 @@ async function loadPlaylists() {
     renderPlaylists();
 }
 
-
-/*
-    Render playlist cards.
-*/
 
 function renderPlaylists() {
 
@@ -2629,11 +2641,6 @@ async function openPlaylist(
     );
 
 
-    /*
-        Hide the normal playlist list
-        while viewing a playlist.
-    */
-
     document
         .querySelector(
             ".playlists-section"
@@ -2672,6 +2679,7 @@ backToPlaylistsButton.addEventListener(
         playlistSongs =
             [];
 
+
         playlistView.classList.add(
             "hidden"
         );
@@ -2705,11 +2713,6 @@ backToPlaylistsButton.addEventListener(
 async function loadPlaylistSongs(
     playlistId
 ) {
-
-    /*
-        First get the playlist-song
-        relationship records.
-    */
 
     const {
         data:
@@ -2765,14 +2768,6 @@ async function loadPlaylistSongs(
         return;
     }
 
-
-    /*
-        Get the actual songs.
-
-        We use a separate query instead of
-        relying on nested PostgREST relations,
-        making the code more robust.
-    */
 
     const songIds =
         playlistSongRows.map(
@@ -3170,11 +3165,6 @@ closePlaylistModalButton.addEventListener(
 );
 
 
-/*
-    Clicking the dark area outside
-    the modal closes it.
-*/
-
 addToPlaylistModal.addEventListener(
     "click",
     (event) => {
@@ -3349,11 +3339,6 @@ async function addSongToPlaylist(
 
         if (error) {
 
-            /*
-                PostgreSQL unique constraint:
-                the song is already in the playlist.
-            */
-
             if (
                 error.code ===
                 "23505"
@@ -3384,11 +3369,6 @@ async function addSongToPlaylist(
 
         closeAddToPlaylistModal();
 
-
-        /*
-            If the user is currently viewing
-            this playlist, refresh it.
-        */
 
         if (
             currentPlaylist &&
@@ -3504,11 +3484,6 @@ async function playPlaylist() {
     }
 
 
-    /*
-        Convert playlist records into
-        normal song objects for the player.
-    */
-
     playbackQueue =
         playlistSongs.map(
             (item) =>
@@ -3600,6 +3575,10 @@ async function downloadPlaylist() {
         true;
 
 
+    let temporaryZipPath =
+        null;
+
+
     try {
 
         const zip =
@@ -3632,9 +3611,19 @@ async function downloadPlaylist() {
 
 
             showToast(
-                `Downloading ${index + 1}/${total}: ${song.title}`
+                `Preparing ${index + 1}/${total}: ${song.title}`
             );
 
+
+            /*
+                Fetching here is intentional.
+
+                We need the actual audio bytes to
+                construct the ZIP.
+
+                The final ZIP download itself will
+                NOT use a blob URL.
+            */
 
             const {
                 data,
@@ -3677,11 +3666,6 @@ async function downloadPlaylist() {
                     song
                 );
 
-
-            /*
-                Avoid duplicate filenames
-                inside the ZIP.
-            */
 
             const existingFiles =
                 Object.keys(
@@ -3736,21 +3720,133 @@ async function downloadPlaylist() {
             });
 
 
-        const filename =
-            `${sanitizeFilename(
+        /*
+            -------------------------------------------------
+            IMPORTANT APK FIX
+            -------------------------------------------------
+
+            Do NOT download this ZIP through:
+
+                URL.createObjectURL(zipBlob)
+
+            Android WebViews often don't handle that
+            correctly.
+
+            Instead we temporarily upload the ZIP to
+            the user's own private Supabase folder.
+
+            Then we create a real HTTPS signed URL
+            with download behavior enabled.
+
+            The WebView can then hand the HTTPS
+            download to Android's download system.
+        */
+
+        const safePlaylistName =
+            sanitizeFilename(
                 currentPlaylist.name
-            ) || "playlist"}.zip`;
+            ) || "playlist";
 
 
-        triggerBrowserDownload(
-            zipBlob,
-            filename
+        const uniqueZipName =
+            `${safePlaylistName}-${crypto.randomUUID()}.zip`;
+
+
+        temporaryZipPath =
+            `${currentUser.id}/downloads/${uniqueZipName}`;
+
+
+        const {
+            error:
+                zipUploadError
+        } =
+            await supabaseClient.storage
+                .from("songs")
+                .upload(
+                    temporaryZipPath,
+                    zipBlob,
+                    {
+                        contentType:
+                            "application/zip",
+
+                        cacheControl:
+                            "3600",
+
+                        upsert:
+                            false
+                    }
+                );
+
+
+        if (zipUploadError) {
+            throw zipUploadError;
+        }
+
+
+        showToast(
+            "Preparing ZIP download..."
+        );
+
+
+        const signedZipUrl =
+            await createDownloadUrl(
+                temporaryZipPath,
+                `${safePlaylistName}.zip`
+            );
+
+
+        /*
+            Send the REAL HTTPS URL to the
+            WebView instead of a blob URL.
+        */
+
+        openDownloadUrl(
+            signedZipUrl,
+            `${safePlaylistName}.zip`
         );
 
 
         showToast(
             "Playlist download started."
         );
+
+
+        /*
+            Do not delete immediately.
+
+            The Android download manager may
+            still be starting the transfer.
+
+            Clean it up after 15 minutes.
+        */
+
+        setTimeout(
+            async () => {
+
+                try {
+
+                    await supabaseClient.storage
+                        .from("songs")
+                        .remove([
+                            temporaryZipPath
+                        ]);
+
+                } catch (cleanupError) {
+
+                    console.warn(
+                        "Temporary ZIP cleanup failed:",
+                        cleanupError
+                    );
+
+                }
+
+            },
+            15 * 60 * 1000
+        );
+
+
+        temporaryZipPath =
+            null;
 
 
     } catch (error) {
@@ -3760,10 +3856,39 @@ async function downloadPlaylist() {
             error
         );
 
+
+        /*
+            If something failed after the ZIP was
+            uploaded, clean it up immediately.
+        */
+
+        if (temporaryZipPath) {
+
+            try {
+
+                await supabaseClient.storage
+                    .from("songs")
+                    .remove([
+                        temporaryZipPath
+                    ]);
+
+            } catch (cleanupError) {
+
+                console.warn(
+                    "ZIP cleanup error:",
+                    cleanupError
+                );
+
+            }
+
+        }
+
+
         showToast(
             error.message ||
             "Could not download playlist."
         );
+
 
     } finally {
 
