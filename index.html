@@ -23,7 +23,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- ZIP creation for playlist downloads -->
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
 
@@ -31,50 +30,85 @@
 <body>
 
 
-    <!-- ======================================
-         AUTH SCREEN
-         ====================================== -->
+    <!-- ==================================================
+         AUTH
+         ================================================== -->
 
     <main
         id="authScreen"
         class="auth-screen"
     >
 
+        <div class="auth-background"></div>
+
         <div class="auth-card">
 
-            <div class="logo">
-                ♪
+            <div class="auth-brand">
+
+                <div class="logo">
+                    ♪
+                </div>
+
+                <div>
+                    <h1>Cloud Music</h1>
+                    <p>Your music. In the cloud.</p>
+                </div>
+
             </div>
 
-            <h1>
-                Cloud Music
-            </h1>
 
-            <p class="subtitle">
-                Your music. In the cloud.
-            </p>
+            <div class="auth-heading">
+
+                <h2>
+                    Welcome back
+                </h2>
+
+                <p>
+                    Sign in to continue listening.
+                </p>
+
+            </div>
 
 
             <form id="authForm">
 
-                <input
-                    id="emailInput"
-                    type="email"
-                    placeholder="Email"
-                    autocomplete="email"
-                    required
-                >
+                <div class="input-group">
 
-                <input
-                    id="passwordInput"
-                    type="password"
-                    placeholder="Password"
-                    autocomplete="current-password"
-                    required
-                >
+                    <label for="emailInput">
+                        Email
+                    </label>
+
+                    <input
+                        id="emailInput"
+                        type="email"
+                        placeholder="you@example.com"
+                        autocomplete="email"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="input-group">
+
+                    <label for="passwordInput">
+                        Password
+                    </label>
+
+                    <input
+                        id="passwordInput"
+                        type="password"
+                        placeholder="Your password"
+                        autocomplete="current-password"
+                        required
+                    >
+
+                </div>
+
 
                 <button
                     id="authButton"
+                    class="primary-button auth-submit"
                     type="submit"
                 >
                     Log in
@@ -103,9 +137,9 @@
 
 
 
-    <!-- ======================================
-         MAIN APP
-         ====================================== -->
+    <!-- ==================================================
+         MAIN APPLICATION
+         ================================================== -->
 
     <main
         id="app"
@@ -113,387 +147,768 @@
     >
 
 
-        <!-- ==================================
-             HEADER
-             ================================== -->
+        <!-- ==================================================
+             TOP NAVIGATION
+             ================================================== -->
 
         <header class="topbar">
 
-            <div>
+            <div class="brand">
 
-                <h1>
-                    Cloud Music
-                </h1>
+                <div class="brand-logo">
+                    ♪
+                </div>
 
-                <p id="userEmail"></p>
+                <div class="brand-text">
+
+                    <strong>
+                        Cloud Music
+                    </strong>
+
+                    <span>
+                        Listen anywhere
+                    </span>
+
+                </div>
 
             </div>
 
 
-            <button
-                id="logoutButton"
-                class="icon-button"
-                type="button"
-                title="Log out"
-            >
-                ↪
-            </button>
+            <div class="topbar-user">
+
+                <div class="user-profile">
+
+                    <div class="user-avatar">
+                        ♪
+                    </div>
+
+                    <div class="user-details">
+
+                        <span class="user-label">
+                            Signed in as
+                        </span>
+
+                        <strong id="userEmail"></strong>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    id="logoutButton"
+                    class="icon-button"
+                    type="button"
+                    title="Log out"
+                    aria-label="Log out"
+                >
+                    ↪
+                </button>
+
+            </div>
 
         </header>
 
 
 
-        <!-- ==================================
-             UPLOAD
-             ================================== -->
+        <!-- ==================================================
+             APP CONTENT
+             ================================================== -->
 
-        <section class="upload-section">
-
-            <input
-                id="fileInput"
-                type="file"
-                accept="audio/*"
-                hidden
-            >
+        <div class="app-content">
 
 
-            <button
-                id="uploadButton"
-                class="upload-button"
-                type="button"
-            >
+            <!-- ==================================================
+                 HERO
+                 ================================================== -->
 
-                <span class="upload-icon">
-                    ☁
-                </span>
+            <section class="home-hero">
 
+                <div class="hero-content">
 
-                <span>
-
-                    <strong>
-                        Upload music
-                    </strong>
-
-                    <small>
-                        Choose an audio file from your device
-                    </small>
-
-                </span>
-
-            </button>
-
-
-            <div
-                id="uploadProgressContainer"
-                class="progress-container hidden"
-            >
-
-                <div class="progress-top">
-
-                    <span id="uploadFileName">
-                        Uploading...
+                    <span class="hero-eyebrow">
+                        YOUR MUSIC
                     </span>
 
-                    <span id="uploadPercent">
-                        0%
-                    </span>
+                    <h1>
+                        Your music,<br>
+                        <span>your way.</span>
+                    </h1>
+
+                    <p>
+                        Upload, discover, organize and listen to your music
+                        from anywhere.
+                    </p>
 
                 </div>
 
 
-                <div class="progress-track">
+                <div class="hero-symbol">
+                    ♪
+                </div>
+
+            </section>
+
+
+
+            <!-- ==================================================
+                 UPLOAD
+                 ================================================== -->
+
+            <section class="upload-section content-section">
+
+                <div class="section-header">
+
+                    <div class="section-heading">
+
+                        <span class="section-eyebrow">
+                            YOUR CLOUD
+                        </span>
+
+                        <h2>
+                            Upload music
+                        </h2>
+
+                        <p>
+                            Add your song, artwork and artist information.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="upload-panel">
+
+
+                    <!-- AUDIO FILE -->
+
+                    <div class="upload-field">
+
+                        <label
+                            for="fileInput"
+                            class="upload-field-label"
+                        >
+                            Audio file
+                        </label>
+
+
+                        <div class="audio-file-picker">
+
+                            <button
+                                id="uploadButton"
+                                class="secondary-button"
+                                type="button"
+                            >
+                                ↑&nbsp; Choose audio
+                            </button>
+
+
+                            <span
+                                id="selectedAudioName"
+                                class="selected-file-name"
+                            >
+                                No audio selected
+                            </span>
+
+                        </div>
+
+
+                        <input
+                            id="fileInput"
+                            type="file"
+                            accept="audio/*"
+                            hidden
+                        >
+
+                    </div>
+
+
+
+                    <!-- SONG TITLE -->
+
+                    <div class="upload-field">
+
+                        <label
+                            for="songTitleInput"
+                            class="upload-field-label"
+                        >
+                            Song name
+                        </label>
+
+
+                        <input
+                            id="songTitleInput"
+                            class="upload-input"
+                            type="text"
+                            maxlength="200"
+                            placeholder="Enter song name"
+                            autocomplete="off"
+                        >
+
+                    </div>
+
+
+
+                    <!-- ARTIST -->
+
+                    <div class="upload-field">
+
+                        <label
+                            for="artistNameInput"
+                            class="upload-field-label"
+                        >
+                            Artist
+                        </label>
+
+
+                        <input
+                            id="artistNameInput"
+                            class="upload-input"
+                            type="text"
+                            maxlength="200"
+                            placeholder="Enter artist name"
+                            autocomplete="off"
+                        >
+
+                    </div>
+
+
+
+                    <!-- THUMBNAIL -->
+
+                    <div class="upload-field">
+
+                        <label
+                            for="thumbnailInput"
+                            class="upload-field-label"
+                        >
+                            Thumbnail
+                        </label>
+
+
+                        <div class="thumbnail-upload-area">
+
+
+                            <div
+                                id="thumbnailPreview"
+                                class="thumbnail-preview"
+                            >
+
+                                <div
+                                    id="thumbnailPlaceholder"
+                                    class="thumbnail-placeholder"
+                                >
+                                    ♪
+                                </div>
+
+
+                                <img
+                                    id="thumbnailPreviewImage"
+                                    class="hidden"
+                                    alt="Song thumbnail preview"
+                                >
+
+                            </div>
+
+
+                            <div class="thumbnail-actions">
+
+                                <button
+                                    id="thumbnailButton"
+                                    class="secondary-button"
+                                    type="button"
+                                >
+                                    🖼&nbsp; Choose thumbnail
+                                </button>
+
+
+                                <button
+                                    id="removeThumbnailButton"
+                                    class="text-button hidden"
+                                    type="button"
+                                >
+                                    Remove thumbnail
+                                </button>
+
+
+                                <input
+                                    id="thumbnailInput"
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp,image/gif"
+                                    hidden
+                                >
+
+
+                                <small>
+                                    JPG, PNG, WEBP or GIF
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- UPLOAD ACTION -->
+
+                    <div class="upload-submit-area">
+
+                        <button
+                            id="startUploadButton"
+                            class="primary-button"
+                            type="button"
+                        >
+                            ↑&nbsp; Upload song
+                        </button>
+
+                    </div>
+
+
+
+                    <!-- UPLOAD PROGRESS -->
 
                     <div
-                        id="uploadProgress"
-                        class="progress-bar"
-                    ></div>
+                        id="uploadProgressContainer"
+                        class="progress-container hidden"
+                    >
+
+                        <div class="progress-top">
+
+                            <span id="uploadFileName">
+                                Uploading...
+                            </span>
+
+                            <span id="uploadPercent">
+                                0%
+                            </span>
+
+                        </div>
+
+
+                        <div class="progress-track">
+
+                            <div
+                                id="uploadProgress"
+                                class="progress-bar"
+                            ></div>
+
+                        </div>
+
+                    </div>
 
                 </div>
 
-            </div>
-
-        </section>
+            </section>
 
 
 
-        <!-- ==================================
-             PLAYLISTS
-             ================================== -->
+            <!-- ==================================================
+                 DISCOVER
+                 ================================================== -->
 
-        <section class="playlists-section">
-
-
-            <div class="section-header">
-
-                <div>
-
-                    <h2>
-                        Playlists
-                    </h2>
-
-                    <p id="playlistCount">
-                        0 playlists
-                    </p>
-
-                </div>
-
-
-                <button
-                    id="createPlaylistButton"
-                    class="refresh-button"
-                    type="button"
-                    title="Create playlist"
-                >
-                    +
-                </button>
-
-            </div>
-
-
-            <!-- CREATE PLAYLIST -->
-
-            <div
-                id="playlistCreatePanel"
-                class="playlist-create-panel hidden"
+            <section
+                id="discoverSection"
+                class="content-section discover-section"
             >
 
-                <input
-                    id="playlistNameInput"
-                    type="text"
-                    maxlength="100"
-                    placeholder="Playlist name"
-                >
+                <div class="section-header">
 
+                    <div class="section-heading">
 
-                <div class="playlist-create-actions">
+                        <span class="section-eyebrow">
+                            EXPLORE
+                        </span>
+
+                        <h2>
+                            Discover
+                        </h2>
+
+                        <p id="discoverCount">
+                            0 public songs
+                        </p>
+
+                    </div>
+
 
                     <button
-                        id="savePlaylistButton"
+                        id="discoverRefreshButton"
+                        class="refresh-button"
                         type="button"
+                        title="Refresh Discover"
+                        aria-label="Refresh Discover"
                     >
-                        Create
-                    </button>
-
-                    <button
-                        id="cancelPlaylistButton"
-                        type="button"
-                    >
-                        Cancel
+                        ↻
                     </button>
 
                 </div>
 
-            </div>
 
-
-
-            <!-- PLAYLIST LIST -->
-
-            <div
-                id="playlistList"
-                class="playlist-list"
-            ></div>
-
-
-            <!-- EMPTY PLAYLIST STATE -->
-
-            <div
-                id="emptyPlaylistState"
-                class="empty-state hidden"
-            >
-
-                <div class="empty-icon">
-                    ♫
-                </div>
-
-                <h3>
-                    No playlists yet
-                </h3>
-
-                <p>
-                    Create a playlist and add your music to it.
-                </p>
-
-            </div>
-
-
-        </section>
-
-
-
-        <!-- ==================================
-             PLAYLIST VIEW
-             ================================== -->
-
-        <section
-            id="playlistView"
-            class="playlist-view hidden"
-        >
-
-
-            <div class="playlist-view-header">
-
-                <button
-                    id="backToPlaylistsButton"
-                    class="icon-button"
-                    type="button"
-                    title="Back"
+                <div
+                    id="discoverLoading"
+                    class="loading hidden"
                 >
-                    ←
-                </button>
 
+                    <span class="loading-spinner"></span>
 
-                <div>
-
-                    <h2 id="playlistViewTitle">
-                        Playlist
-                    </h2>
-
-                    <p id="playlistViewCount">
-                        0 songs
-                    </p>
+                    Finding public music...
 
                 </div>
 
-            </div>
 
-
-            <div class="playlist-view-actions">
-
-                <button
-                    id="playPlaylistButton"
-                    type="button"
+                <div
+                    id="discoverEmptyState"
+                    class="empty-state hidden"
                 >
-                    ▶ Play all
-                </button>
 
+                    <div class="empty-icon">
+                        ◉
+                    </div>
 
-                <button
-                    id="downloadPlaylistButton"
-                    type="button"
-                >
-                    ↓ Download
-                </button>
+                    <h3>
+                        Nothing to discover yet
+                    </h3>
 
-            </div>
-
-
-            <div
-                id="playlistSongList"
-                class="song-list"
-            ></div>
-
-
-            <div
-                id="emptyPlaylistSongs"
-                class="empty-state hidden"
-            >
-
-                <div class="empty-icon">
-                    ♫
-                </div>
-
-                <h3>
-                    Playlist is empty
-                </h3>
-
-                <p>
-                    Add songs from your library.
-                </p>
-
-            </div>
-
-        </section>
-
-
-
-        <!-- ==================================
-             LIBRARY
-             ================================== -->
-
-        <section
-            id="librarySection"
-            class="library-section"
-        >
-
-            <div class="section-header">
-
-                <div>
-
-                    <h2>
-                        Your Library
-                    </h2>
-
-                    <p id="songCount">
-                        0 songs
+                    <p>
+                        Public songs from Cloud Music users will appear here.
                     </p>
 
                 </div>
 
 
-                <button
-                    id="refreshButton"
-                    class="refresh-button"
-                    type="button"
-                    title="Refresh"
-                >
-                    ↻
-                </button>
+                <div
+                    id="discoverSongList"
+                    class="song-list"
+                ></div>
 
-            </div>
+            </section>
 
 
-            <div
-                id="loading"
-                class="loading hidden"
-            >
-                Loading your music...
-            </div>
 
+            <!-- ==================================================
+                 LIBRARY
+                 ================================================== -->
 
-            <div
-                id="emptyState"
-                class="empty-state hidden"
+            <section
+                id="librarySection"
+                class="content-section library-section"
             >
 
-                <div class="empty-icon">
-                    ♫
+                <div class="section-header">
+
+                    <div class="section-heading">
+
+                        <span class="section-eyebrow">
+                            YOUR MUSIC
+                        </span>
+
+                        <h2>
+                            Your Library
+                        </h2>
+
+                        <p id="songCount">
+                            0 songs
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        id="refreshButton"
+                        class="refresh-button"
+                        type="button"
+                        title="Refresh library"
+                        aria-label="Refresh library"
+                    >
+                        ↻
+                    </button>
+
                 </div>
 
-                <h3>
-                    Your library is empty
-                </h3>
 
-                <p>
-                    Upload your first song to get started.
-                </p>
+                <div
+                    id="loading"
+                    class="loading hidden"
+                >
 
-            </div>
+                    <span class="loading-spinner"></span>
 
+                    Loading your music...
 
-            <div
-                id="songList"
-                class="song-list"
-            ></div>
-
-        </section>
+                </div>
 
 
+                <div
+                    id="emptyState"
+                    class="empty-state hidden"
+                >
 
-        <!-- ==================================
-             ADD SONG TO PLAYLIST MODAL
-             ================================== -->
+                    <div class="empty-icon">
+                        ♪
+                    </div>
+
+                    <h3>
+                        Your library is empty
+                    </h3>
+
+                    <p>
+                        Upload your first song to get started.
+                    </p>
+
+                </div>
+
+
+                <div
+                    id="songList"
+                    class="song-list"
+                ></div>
+
+            </section>
+
+
+
+            <!-- ==================================================
+                 PLAYLISTS
+                 ================================================== -->
+
+            <section
+                class="content-section playlists-section"
+            >
+
+                <div class="section-header">
+
+                    <div class="section-heading">
+
+                        <span class="section-eyebrow">
+                            COLLECTIONS
+                        </span>
+
+                        <h2>
+                            Playlists
+                        </h2>
+
+                        <p id="playlistCount">
+                            0 playlists
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        id="createPlaylistButton"
+                        class="refresh-button"
+                        type="button"
+                        title="Create playlist"
+                        aria-label="Create playlist"
+                    >
+                        +
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="playlistCreatePanel"
+                    class="playlist-create-panel hidden"
+                >
+
+                    <div class="create-playlist-heading">
+
+                        <span class="create-playlist-icon">
+                            +
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                New playlist
+                            </strong>
+
+                            <small>
+                                Give your playlist a name
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <input
+                        id="playlistNameInput"
+                        type="text"
+                        maxlength="100"
+                        placeholder="Playlist name"
+                    >
+
+
+                    <div class="playlist-create-actions">
+
+                        <button
+                            id="savePlaylistButton"
+                            class="primary-button"
+                            type="button"
+                        >
+                            Create playlist
+                        </button>
+
+                        <button
+                            id="cancelPlaylistButton"
+                            class="secondary-button"
+                            type="button"
+                        >
+                            Cancel
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="playlistList"
+                    class="playlist-list"
+                ></div>
+
+
+                <div
+                    id="emptyPlaylistState"
+                    class="empty-state hidden"
+                >
+
+                    <div class="empty-icon">
+                        ♫
+                    </div>
+
+                    <h3>
+                        No playlists yet
+                    </h3>
+
+                    <p>
+                        Create a playlist and add your music to it.
+                    </p>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- ==================================================
+                 PLAYLIST VIEW
+                 ================================================== -->
+
+            <section
+                id="playlistView"
+                class="playlist-view hidden"
+            >
+
+                <div class="playlist-view-header">
+
+                    <button
+                        id="backToPlaylistsButton"
+                        class="icon-button"
+                        type="button"
+                        title="Back to playlists"
+                        aria-label="Back to playlists"
+                    >
+                        ←
+                    </button>
+
+
+                    <div class="playlist-view-heading">
+
+                        <span class="section-eyebrow">
+                            PLAYLIST
+                        </span>
+
+                        <h2 id="playlistViewTitle">
+                            Playlist
+                        </h2>
+
+                        <p id="playlistViewCount">
+                            0 songs
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="playlist-view-actions">
+
+                    <button
+                        id="playPlaylistButton"
+                        class="primary-button"
+                        type="button"
+                    >
+                        ▶&nbsp; Play all
+                    </button>
+
+
+                    <button
+                        id="downloadPlaylistButton"
+                        class="secondary-button"
+                        type="button"
+                    >
+                        ↓&nbsp; Download
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="playlistSongList"
+                    class="song-list"
+                ></div>
+
+
+                <div
+                    id="emptyPlaylistSongs"
+                    class="empty-state hidden"
+                >
+
+                    <div class="empty-icon">
+                        ♫
+                    </div>
+
+                    <h3>
+                        Playlist is empty
+                    </h3>
+
+                    <p>
+                        Add songs from your library.
+                    </p>
+
+                </div>
+
+            </section>
+
+        </div>
+
+
+
+        <!-- ==================================================
+             ADD TO PLAYLIST MODAL
+             ================================================== -->
 
         <div
             id="addToPlaylistModal"
             class="modal hidden"
         >
 
+            <div class="modal-backdrop"></div>
+
             <div class="modal-card">
 
                 <div class="modal-header">
 
                     <div>
+
+                        <span class="section-eyebrow">
+                            PLAYLISTS
+                        </span>
 
                         <h3>
                             Add to playlist
@@ -510,6 +925,7 @@
                         id="closePlaylistModalButton"
                         class="icon-button"
                         type="button"
+                        aria-label="Close"
                     >
                         ×
                     </button>
@@ -528,112 +944,209 @@
 
 
 
-        <!-- ==================================
-             PLAYER
-             ================================== -->
+        <!-- ==================================================
+             MUSIC PLAYER
+             ================================================== -->
 
         <section
             id="player"
             class="player hidden"
         >
 
+            <div class="player-inner">
 
-            <div class="player-info">
 
-                <div class="player-art">
-                    ♫
+                <div class="player-header">
+
+                    <div class="player-header-left">
+
+                        <span class="player-label">
+                            NOW PLAYING
+                        </span>
+
+                    </div>
+
+
+                    <button
+                        id="playerCloseButton"
+                        class="player-close-button"
+                        type="button"
+                        aria-label="Close player"
+                        title="Close player"
+                    >
+                        ×
+                    </button>
+
                 </div>
 
 
-                <div class="player-details">
 
-                    <strong id="playerTitle">
-                        No song playing
-                    </strong>
+                <div class="player-artwork-wrapper">
 
-                    <span id="playerStatus">
-                        Ready
+                    <div class="player-artwork">
+
+                        <img
+                            id="playerThumbnail"
+                            class="hidden"
+                            alt="Song thumbnail"
+                        >
+
+                        <span
+                            id="playerThumbnailPlaceholder"
+                        >
+                            ♪
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="player-song-info">
+
+                    <div class="player-song-text">
+
+                        <h2 id="playerTitle">
+                            No song playing
+                        </h2>
+
+                        <p id="playerArtist">
+                            Unknown artist
+                        </p>
+
+                        <p id="playerStatus">
+                            Ready
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        class="player-like-button"
+                        type="button"
+                        aria-label="Like song"
+                    >
+                        ♡
+                    </button>
+
+                </div>
+
+
+
+                <div class="player-progress">
+
+                    <span id="currentTime">
+                        0:00
+                    </span>
+
+
+                    <input
+                        id="seekBar"
+                        type="range"
+                        min="0"
+                        max="100"
+                        value="0"
+                        aria-label="Song progress"
+                    >
+
+
+                    <span id="totalTime">
+                        0:00
                     </span>
 
                 </div>
 
-            </div>
 
 
-            <audio
-                id="audioPlayer"
-            ></audio>
+                <div class="player-controls">
+
+                    <button
+                        class="player-extra-control"
+                        type="button"
+                        aria-label="Shuffle"
+                    >
+                        🔀
+                    </button>
 
 
-            <div class="player-progress">
-
-                <span id="currentTime">
-                    0:00
-                </span>
-
-
-                <input
-                    id="seekBar"
-                    type="range"
-                    min="0"
-                    max="100"
-                    value="0"
-                >
+                    <button
+                        id="previousButton"
+                        class="control-button"
+                        type="button"
+                        aria-label="Previous song"
+                    >
+                        ⏮
+                    </button>
 
 
-                <span id="totalTime">
-                    0:00
-                </span>
-
-            </div>
-
-
-            <div class="player-controls">
-
-                <button
-                    id="previousButton"
-                    class="control-button"
-                    type="button"
-                >
-                    ⏮
-                </button>
+                    <button
+                        id="playButton"
+                        class="play-button"
+                        type="button"
+                        aria-label="Play or pause"
+                    >
+                        ▶
+                    </button>
 
 
-                <button
-                    id="playButton"
-                    class="play-button"
-                    type="button"
-                >
-                    ▶
-                </button>
+                    <button
+                        id="nextButton"
+                        class="control-button"
+                        type="button"
+                        aria-label="Next song"
+                    >
+                        ⏭
+                    </button>
 
 
-                <button
-                    id="nextButton"
-                    class="control-button"
-                    type="button"
-                >
-                    ⏭
-                </button>
+                    <button
+                        class="player-extra-control"
+                        type="button"
+                        aria-label="Repeat"
+                    >
+                        🔁
+                    </button>
 
-            </div>
-
-
-            <div class="volume-row">
-
-                <span>
-                    🔊
-                </span>
+                </div>
 
 
-                <input
-                    id="volumeBar"
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value="1"
-                >
+
+                <div class="player-bottom">
+
+                    <div class="player-volume">
+
+                        <span>
+                            🔊
+                        </span>
+
+                        <input
+                            id="volumeBar"
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            value="1"
+                            aria-label="Volume"
+                        >
+
+                    </div>
+
+
+                    <button
+                        class="queue-button"
+                        type="button"
+                    >
+                        ☰&nbsp; Queue
+                    </button>
+
+                </div>
+
+
+
+                <audio
+                    id="audioPlayer"
+                ></audio>
 
             </div>
 
@@ -643,22 +1156,25 @@
 
 
 
-    <!-- ======================================
+    <!-- ==================================================
          TOAST
-         ====================================== -->
+         ================================================== -->
 
     <div
         id="toast"
         class="toast"
+        role="status"
+        aria-live="polite"
     ></div>
 
 
 
-    <!-- ======================================
-         APP JAVASCRIPT
-         ====================================== -->
+    <!-- ==================================================
+         JAVASCRIPT
+         ================================================== -->
 
     <script src="script.js"></script>
+    <script src="upload.js"></script>
 
 </body>
 
